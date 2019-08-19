@@ -1,35 +1,37 @@
-// PPM 
+#![allow(dead_code)]
 
-#[derive(Clone)]
+// Represents one pixel within a PPM file, rgb
+#[derive(Clone, Copy)]
 pub struct Pixel {
     pub r: u8,
     pub g: u8,
     pub b: u8
 }
-
 impl Pixel {
     pub fn to_string(&self) -> String {
         format!("{} {} {}", &self.r, &self.g, &self.b)
     }
 }
+#[macro_export]
+macro_rules! pxl {
+    ($x:expr, $y:expr,  $z:expr) => {
+        Pixel {
+            r: $x,
+            g: $y,
+            b: $z
+        }
+    };
+}
+// ---
 
+// Represents the contents of a PPM file
 pub struct PPM {
     width: u16,
     height: u16,
     data: Vec<Vec<Pixel>>
 }
-
-pub fn row_to_string(row: &Vec<Pixel>) -> String {
-    let mut out: String = String::new();
-    for x in row {
-        out.push_str(x.to_string().as_str());
-        out.push_str(" ");
-    }
-    out
-}
-
 impl PPM {
-    pub fn New(width: u16, height: u16) -> PPM {
+    pub fn new(width: u16, height: u16) -> PPM {
         PPM {
             width: width,
             height: height,
@@ -42,13 +44,26 @@ impl PPM {
     pub fn to_string(&self) -> String {
         let mut s: String;
         s = format!("P3\n{} {}\n255\n", self.width, self.height);
-        for x in &self.data {
-            s.push_str(row_to_string(x).as_str());
-            s.pop();
-            s.push_str("\n");
+        for x in 0..self.height {
+            for y in 0..self.width {
+                s.push_str(self.data[y as usize][x as usize].to_string().as_str());
+                s.push_str("\n");
+            }
         }
         s.pop();
         s
     }
+    pub fn set(&mut self, x: u16, y: u16, pixel: Pixel) -> Result<Pixel, String> {
+        if (x < self.width) && (y < self.height) {
+            let old_pix = self.data[x as usize][y as usize];
+            self.data[x as usize][y as usize] = pixel;
+            Ok(old_pix)
+        } else {
+            Err(
+                format!("set({}, {}) out of bounds for {}x{} image",
+                x, y, self.width, self.height)
+            )
+        }
+    }
 }
-
+// ---
