@@ -22,21 +22,20 @@ impl Ray {
         self.origin.add_by_vec(&self.direction.mul(t))
     }
     // Get the color for a ray
-    pub fn get_color(&self, world: &dyn Object) -> Vec3 {
+    pub fn get_color(&self, world: &dyn Object, depth: i32) -> Vec3 {
         // Check hits
-        let mut temp = HitRecord {
-            t: 0.0,
-            p: Vec3::all(0.0),
-            normal: Vec3::all(0.0)
-        };
-
+        let mut temp = HitRecord::default();
         let hit = world.check_hit(&self, 0.001, std::f32::MAX, &mut temp);
 
         if hit {
-            let target = temp.p.add_by_vec(&temp.normal).add_by_vec(&random_in_unit_sphere());
-            let mut sub_color = Ray::new(temp.p.copy(), target.sub_by_vec(&temp.p)).get_color(world);
-            sub_color.mul_eq(0.5);
-            sub_color
+            // Predefine structs
+            let mut scattered = Ray::new(Vec3::all(0.0), Vec3::all(0.0));
+            let mut attenuation = Vec3::all(0.0);
+            if depth < 50 && temp.material.scatter(&self, &temp, &mut attenuation, &mut scattered) {
+                return attenuation.mul_by_vec(&scattered.get_color(world, depth + 1));
+            } else {
+                return Vec3::all(0.0);
+            }
         } else {
             // If there wasn't a hit, just show the background color
             let unit_direction = self.direction.as_unit();

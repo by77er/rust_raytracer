@@ -10,7 +10,7 @@ use raytracer::camera::*;
 use raytracer::object::*;
 
 const FILENAME: &'static str = "render.png"; // Output filename
-const DIMS: (u32, u32) = (1000, 500);         // Image dimensions
+const DIMS: (u32, u32) = (2000, 1000);         // Image dimensions
 const AA_ROUNDS: u16 = 100;                  // Samples per pixel
 
 fn main() {
@@ -25,21 +25,20 @@ fn main() {
 // Handles pretty much everything related to generating the image
 fn render(img: &mut RgbImage) {
     // lets us create rays
-    let cam = Camera::new();
+    let from = Vec3::new(13.0, 2.0, 3.0);
+    let at   = Vec3::new(0.0, 0.0, 0.0);
+    let cam = Camera::new(
+            from,
+            at,
+            Vec3::new(0.0, 1.0, 0.0),
+            20.0, // FOV
+            DIMS.0 as f32 / DIMS.1 as f32, // Aspect ratio
+            0.1, // Aperture
+            10.0 // Focal length
+        );
 
-    // Defines the world and its contents
-    let sphere1 = Sphere::new(
-        Vec3::new(0.0, 0.0, -1.0),
-        0.5
-    );
-    let sphere2 = Sphere::new(
-        Vec3::new(0.0, -100.5, -1.0),
-        100.0
-    );
-    let mut world = World::new();
-    world.add_object(Box::new(sphere1));
-    world.add_object(Box::new(sphere2));
-
+    // Defining the materials used in the scene
+    let world = World::random();
     // Random numbers for antialiasing
     let mut rng = rand::thread_rng();
 
@@ -53,7 +52,7 @@ fn render(img: &mut RgbImage) {
                 let u = (x as f32 + rng.gen::<f32>()) / DIMS.0 as f32;
                 let v = (y as f32 + rng.gen::<f32>()) / DIMS.1 as f32;
                 let ray = cam.get_ray(u, v);
-                let tmp_color = ray.get_color(&world); // Will have a ref to the world in the future
+                let tmp_color = ray.get_color(&world, 0);
                 color.add_by_vec_eq(&tmp_color);
             }
             // Average each sample

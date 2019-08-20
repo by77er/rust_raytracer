@@ -3,3 +3,4 @@ pub mod object;
 pub mod ray;
 pub mod math;
 pub mod formats;
+pub mod material;
